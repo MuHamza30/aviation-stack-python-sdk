@@ -15,7 +15,8 @@ from apimatic_core.response_handler import ResponseHandler
 from apimatic_core.types.parameter import Parameter
 from aviationstack.http.http_method_enum import HttpMethodEnum
 from apimatic_core.authentication.multiple.single_auth import Single
-from aviationstack.models.m_200_ok_airplanes import M200OKAirplanes
+from aviationstack.models.airplane_response import AirplaneResponse
+from aviationstack.exceptions.error_response_exception import ErrorResponseException
 
 
 class AirplanesController(BaseController):
@@ -24,11 +25,23 @@ class AirplanesController(BaseController):
     def __init__(self, config):
         super(AirplanesController, self).__init__(config)
 
-    def airplanes(self):
-        """Does a GET request to /airplanes.
+    def get_airplanes(self,
+                      limit=100,
+                      offset=0,
+                      iata_type_code=None,
+                      registration_number=None):
+        """Does a GET request to /v1/airplanes.
+
+        Retrieve airplane data
+
+        Args:
+            limit (int, optional): Number of results to return
+            offset (int, optional): Number of results to skip
+            iata_type_code (str, optional): IATA type code
+            registration_number (str, optional): Aircraft registration number
 
         Returns:
-            M200OKAirplanes: Response from the API.
+            AirplaneResponse: Response from the API. Successful response
 
         Raises:
             APIException: When an error occurs while fetching the data from
@@ -39,15 +52,29 @@ class AirplanesController(BaseController):
         """
 
         return super().new_api_call_builder.request(
-            RequestBuilder().server(Server.SERVER_1)
-            .path('/airplanes')
+            RequestBuilder().server(Server.DEFAULT)
+            .path('/v1/airplanes')
             .http_method(HttpMethodEnum.GET)
+            .query_param(Parameter()
+                         .key('limit')
+                         .value(limit))
+            .query_param(Parameter()
+                         .key('offset')
+                         .value(offset))
+            .query_param(Parameter()
+                         .key('iata_type_code')
+                         .value(iata_type_code))
+            .query_param(Parameter()
+                         .key('registration_number')
+                         .value(registration_number))
             .header_param(Parameter()
                           .key('accept')
                           .value('application/json'))
-            .auth(Single('apiKey'))
+            .auth(Single('ApiKeyAuth'))
         ).response(
             ResponseHandler()
             .deserializer(APIHelper.json_deserialize)
-            .deserialize_into(M200OKAirplanes.from_dictionary)
+            .deserialize_into(AirplaneResponse.from_dictionary)
+            .local_error('400', 'Bad request', ErrorResponseException)
+            .local_error('401', 'Unauthorized', ErrorResponseException)
         ).execute()

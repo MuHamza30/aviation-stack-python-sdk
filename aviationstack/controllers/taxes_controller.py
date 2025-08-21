@@ -15,7 +15,8 @@ from apimatic_core.response_handler import ResponseHandler
 from apimatic_core.types.parameter import Parameter
 from aviationstack.http.http_method_enum import HttpMethodEnum
 from apimatic_core.authentication.multiple.single_auth import Single
-from aviationstack.models.m_200_ok_taxes import M200OKTaxes
+from aviationstack.models.tax_response import TaxResponse
+from aviationstack.exceptions.error_response_exception import ErrorResponseException
 
 
 class TaxesController(BaseController):
@@ -24,11 +25,21 @@ class TaxesController(BaseController):
     def __init__(self, config):
         super(TaxesController, self).__init__(config)
 
-    def taxes(self):
-        """Does a GET request to /taxes.
+    def get_taxes(self,
+                  limit=100,
+                  offset=0,
+                  iata_code=None):
+        """Does a GET request to /v1/taxes.
+
+        Retrieve aviation tax data
+
+        Args:
+            limit (int, optional): Number of results to return
+            offset (int, optional): Number of results to skip
+            iata_code (str, optional): IATA code
 
         Returns:
-            M200OKTaxes: Response from the API.
+            TaxResponse: Response from the API. Successful response
 
         Raises:
             APIException: When an error occurs while fetching the data from
@@ -39,15 +50,26 @@ class TaxesController(BaseController):
         """
 
         return super().new_api_call_builder.request(
-            RequestBuilder().server(Server.SERVER_1)
-            .path('/taxes')
+            RequestBuilder().server(Server.DEFAULT)
+            .path('/v1/taxes')
             .http_method(HttpMethodEnum.GET)
+            .query_param(Parameter()
+                         .key('limit')
+                         .value(limit))
+            .query_param(Parameter()
+                         .key('offset')
+                         .value(offset))
+            .query_param(Parameter()
+                         .key('iata_code')
+                         .value(iata_code))
             .header_param(Parameter()
                           .key('accept')
                           .value('application/json'))
-            .auth(Single('apiKey'))
+            .auth(Single('ApiKeyAuth'))
         ).response(
             ResponseHandler()
             .deserializer(APIHelper.json_deserialize)
-            .deserialize_into(M200OKTaxes.from_dictionary)
+            .deserialize_into(TaxResponse.from_dictionary)
+            .local_error('400', 'Bad request', ErrorResponseException)
+            .local_error('401', 'Unauthorized', ErrorResponseException)
         ).execute()

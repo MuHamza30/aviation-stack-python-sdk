@@ -15,7 +15,8 @@ from apimatic_core.response_handler import ResponseHandler
 from apimatic_core.types.parameter import Parameter
 from aviationstack.http.http_method_enum import HttpMethodEnum
 from apimatic_core.authentication.multiple.single_auth import Single
-from aviationstack.models.m_200_ok_cities import M200OKCities
+from aviationstack.models.city_response import CityResponse
+from aviationstack.exceptions.error_response_exception import ErrorResponseException
 
 
 class CitiesController(BaseController):
@@ -24,11 +25,23 @@ class CitiesController(BaseController):
     def __init__(self, config):
         super(CitiesController, self).__init__(config)
 
-    def cities(self):
-        """Does a GET request to /cities.
+    def get_cities(self,
+                   limit=100,
+                   offset=0,
+                   country_code=None,
+                   city_name=None):
+        """Does a GET request to /v1/cities.
+
+        Retrieve city data
+
+        Args:
+            limit (int, optional): Number of results to return
+            offset (int, optional): Number of results to skip
+            country_code (str, optional): Country code
+            city_name (str, optional): City name
 
         Returns:
-            M200OKCities: Response from the API.
+            CityResponse: Response from the API. Successful response
 
         Raises:
             APIException: When an error occurs while fetching the data from
@@ -39,15 +52,29 @@ class CitiesController(BaseController):
         """
 
         return super().new_api_call_builder.request(
-            RequestBuilder().server(Server.SERVER_1)
-            .path('/cities')
+            RequestBuilder().server(Server.DEFAULT)
+            .path('/v1/cities')
             .http_method(HttpMethodEnum.GET)
+            .query_param(Parameter()
+                         .key('limit')
+                         .value(limit))
+            .query_param(Parameter()
+                         .key('offset')
+                         .value(offset))
+            .query_param(Parameter()
+                         .key('country_code')
+                         .value(country_code))
+            .query_param(Parameter()
+                         .key('city_name')
+                         .value(city_name))
             .header_param(Parameter()
                           .key('accept')
                           .value('application/json'))
-            .auth(Single('apiKey'))
+            .auth(Single('ApiKeyAuth'))
         ).response(
             ResponseHandler()
             .deserializer(APIHelper.json_deserialize)
-            .deserialize_into(M200OKCities.from_dictionary)
+            .deserialize_into(CityResponse.from_dictionary)
+            .local_error('400', 'Bad request', ErrorResponseException)
+            .local_error('401', 'Unauthorized', ErrorResponseException)
         ).execute()

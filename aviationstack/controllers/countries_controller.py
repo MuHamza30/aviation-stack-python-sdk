@@ -15,7 +15,8 @@ from apimatic_core.response_handler import ResponseHandler
 from apimatic_core.types.parameter import Parameter
 from aviationstack.http.http_method_enum import HttpMethodEnum
 from apimatic_core.authentication.multiple.single_auth import Single
-from aviationstack.models.m_200_ok_countries import M200OKCountries
+from aviationstack.models.country_response import CountryResponse
+from aviationstack.exceptions.error_response_exception import ErrorResponseException
 
 
 class CountriesController(BaseController):
@@ -24,11 +25,23 @@ class CountriesController(BaseController):
     def __init__(self, config):
         super(CountriesController, self).__init__(config)
 
-    def countries(self):
-        """Does a GET request to /countries.
+    def get_countries(self,
+                      limit=100,
+                      offset=0,
+                      country_code=None,
+                      country_name=None):
+        """Does a GET request to /v1/countries.
+
+        Retrieve country data
+
+        Args:
+            limit (int, optional): Number of results to return
+            offset (int, optional): Number of results to skip
+            country_code (str, optional): Country code
+            country_name (str, optional): Country name
 
         Returns:
-            M200OKCountries: Response from the API.
+            CountryResponse: Response from the API. Successful response
 
         Raises:
             APIException: When an error occurs while fetching the data from
@@ -39,15 +52,29 @@ class CountriesController(BaseController):
         """
 
         return super().new_api_call_builder.request(
-            RequestBuilder().server(Server.SERVER_1)
-            .path('/countries')
+            RequestBuilder().server(Server.DEFAULT)
+            .path('/v1/countries')
             .http_method(HttpMethodEnum.GET)
+            .query_param(Parameter()
+                         .key('limit')
+                         .value(limit))
+            .query_param(Parameter()
+                         .key('offset')
+                         .value(offset))
+            .query_param(Parameter()
+                         .key('country_code')
+                         .value(country_code))
+            .query_param(Parameter()
+                         .key('country_name')
+                         .value(country_name))
             .header_param(Parameter()
                           .key('accept')
                           .value('application/json'))
-            .auth(Single('apiKey'))
+            .auth(Single('ApiKeyAuth'))
         ).response(
             ResponseHandler()
             .deserializer(APIHelper.json_deserialize)
-            .deserialize_into(M200OKCountries.from_dictionary)
+            .deserialize_into(CountryResponse.from_dictionary)
+            .local_error('400', 'Bad request', ErrorResponseException)
+            .local_error('401', 'Unauthorized', ErrorResponseException)
         ).execute()

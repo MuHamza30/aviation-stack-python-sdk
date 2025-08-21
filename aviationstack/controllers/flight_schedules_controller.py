@@ -15,7 +15,8 @@ from apimatic_core.response_handler import ResponseHandler
 from apimatic_core.types.parameter import Parameter
 from aviationstack.http.http_method_enum import HttpMethodEnum
 from apimatic_core.authentication.multiple.single_auth import Single
-from aviationstack.models.m_200_ok_flight_schedules import M200OKFlightSchedules
+from aviationstack.models.flight_schedule_response import FlightScheduleResponse
+from aviationstack.exceptions.error_response_exception import ErrorResponseException
 
 
 class FlightSchedulesController(BaseController):
@@ -24,19 +25,25 @@ class FlightSchedulesController(BaseController):
     def __init__(self, config):
         super(FlightSchedulesController, self).__init__(config)
 
-    def flight_schedules(self,
-                         iata_code,
-                         mtype):
-        """Does a GET request to /timetable.
+    def get_flight_schedules(self,
+                             iata_code,
+                             mtype,
+                             limit=100,
+                             offset=0):
+        """Does a GET request to /v1/flights/{iata_code}/{type}.
+
+        Retrieve flight schedule information for a specific airport
 
         Args:
             iata_code (str): [Required] The IATA code of the airport you'd
                 like to request data from. Example: JFK,DXB.
-            mtype (str): [Required] Airport schedule type. Available values:
-                departure or arrival.
+            mtype (TypeEnum): [Required] Airport schedule type. Available
+                values: departure or arrival.
+            limit (int, optional): Number of results to return
+            offset (int, optional): Number of results to skip
 
         Returns:
-            M200OKFlightSchedules: Response from the API.
+            FlightScheduleResponse: Response from the API. Successful response
 
         Raises:
             APIException: When an error occurs while fetching the data from
@@ -47,21 +54,31 @@ class FlightSchedulesController(BaseController):
         """
 
         return super().new_api_call_builder.request(
-            RequestBuilder().server(Server.SERVER_1)
-            .path('/timetable')
+            RequestBuilder().server(Server.DEFAULT)
+            .path('/v1/flights/{iata_code}/{type}')
             .http_method(HttpMethodEnum.GET)
+            .template_param(Parameter()
+                            .key('iata_code')
+                            .value(iata_code)
+                            .should_encode(True))
+            .template_param(Parameter()
+                            .key('type')
+                            .value(mtype)
+                            .should_encode(True))
             .query_param(Parameter()
-                         .key('iataCode')
-                         .value(iata_code))
+                         .key('limit')
+                         .value(limit))
             .query_param(Parameter()
-                         .key('type')
-                         .value(mtype))
+                         .key('offset')
+                         .value(offset))
             .header_param(Parameter()
                           .key('accept')
                           .value('application/json'))
-            .auth(Single('apiKey'))
+            .auth(Single('ApiKeyAuth'))
         ).response(
             ResponseHandler()
             .deserializer(APIHelper.json_deserialize)
-            .deserialize_into(M200OKFlightSchedules.from_dictionary)
+            .deserialize_into(FlightScheduleResponse.from_dictionary)
+            .local_error('400', 'Bad request', ErrorResponseException)
+            .local_error('401', 'Unauthorized', ErrorResponseException)
         ).execute()

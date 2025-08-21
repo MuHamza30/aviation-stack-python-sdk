@@ -15,8 +15,8 @@ from apimatic_core.response_handler import ResponseHandler
 from apimatic_core.types.parameter import Parameter
 from aviationstack.http.http_method_enum import HttpMethodEnum
 from apimatic_core.authentication.multiple.single_auth import Single
-from aviationstack.models.m_200_ok_ream_time import M200OKReamTime
-from aviationstack.models.m_200_ok_historical import M200OKHistorical
+from aviationstack.models.flight_response import FlightResponse
+from aviationstack.exceptions.error_response_exception import ErrorResponseException
 
 
 class FlightsController(BaseController):
@@ -25,46 +25,41 @@ class FlightsController(BaseController):
     def __init__(self, config):
         super(FlightsController, self).__init__(config)
 
-    def real_time(self):
-        """Does a GET request to /flights.
+    def get_flights(self,
+                    limit=100,
+                    offset=0,
+                    flight_iata=None,
+                    flight_icao=None,
+                    airline_iata=None,
+                    airline_icao=None,
+                    flight_number=None,
+                    dep_iata=None,
+                    dep_icao=None,
+                    arr_iata=None,
+                    arr_icao=None,
+                    flight_status=None,
+                    date=None):
+        """Does a GET request to /v1/flights.
 
-        The Flight endpoint is capable of tracking flights and retrieving
-        flight status information in real-time.
-
-        Returns:
-            M200OKReamTime: Response from the API.
-
-        Raises:
-            APIException: When an error occurs while fetching the data from
-                the remote API. This exception includes the HTTP Response
-                code, an error message, and the HTTP body that was received in
-                the request.
-
-        """
-
-        return super().new_api_call_builder.request(
-            RequestBuilder().server(Server.SERVER_1)
-            .path('/flights')
-            .http_method(HttpMethodEnum.GET)
-            .header_param(Parameter()
-                          .key('accept')
-                          .value('application/json'))
-            .auth(Single('apiKey'))
-        ).response(
-            ResponseHandler()
-            .deserializer(APIHelper.json_deserialize)
-            .deserialize_into(M200OKReamTime.from_dictionary)
-        ).execute()
-
-    def historical(self,
-                   flight_date):
-        """Does a GET request to /flights.
+        Retrieve real-time and historical flight data
 
         Args:
-            flight_date (str): The request query parameter.
+            limit (int, optional): Number of results to return (max 1000)
+            offset (int, optional): Number of results to skip
+            flight_iata (str, optional): IATA code of the flight
+            flight_icao (str, optional): ICAO code of the flight
+            airline_iata (str, optional): IATA code of the airline
+            airline_icao (str, optional): ICAO code of the airline
+            flight_number (str, optional): Flight number
+            dep_iata (str, optional): IATA code of departure airport
+            dep_icao (str, optional): ICAO code of departure airport
+            arr_iata (str, optional): IATA code of arrival airport
+            arr_icao (str, optional): ICAO code of arrival airport
+            flight_status (FlightStatus2Enum, optional): Status of the flight
+            date (date, optional): Date in YYYY-MM-DD format
 
         Returns:
-            M200OKHistorical: Response from the API.
+            FlightResponse: Response from the API. Successful response
 
         Raises:
             APIException: When an error occurs while fetching the data from
@@ -75,18 +70,57 @@ class FlightsController(BaseController):
         """
 
         return super().new_api_call_builder.request(
-            RequestBuilder().server(Server.SERVER_1)
-            .path('/flights')
+            RequestBuilder().server(Server.DEFAULT)
+            .path('/v1/flights')
             .http_method(HttpMethodEnum.GET)
             .query_param(Parameter()
-                         .key('flight_date')
-                         .value(flight_date))
+                         .key('limit')
+                         .value(limit))
+            .query_param(Parameter()
+                         .key('offset')
+                         .value(offset))
+            .query_param(Parameter()
+                         .key('flight_iata')
+                         .value(flight_iata))
+            .query_param(Parameter()
+                         .key('flight_icao')
+                         .value(flight_icao))
+            .query_param(Parameter()
+                         .key('airline_iata')
+                         .value(airline_iata))
+            .query_param(Parameter()
+                         .key('airline_icao')
+                         .value(airline_icao))
+            .query_param(Parameter()
+                         .key('flight_number')
+                         .value(flight_number))
+            .query_param(Parameter()
+                         .key('dep_iata')
+                         .value(dep_iata))
+            .query_param(Parameter()
+                         .key('dep_icao')
+                         .value(dep_icao))
+            .query_param(Parameter()
+                         .key('arr_iata')
+                         .value(arr_iata))
+            .query_param(Parameter()
+                         .key('arr_icao')
+                         .value(arr_icao))
+            .query_param(Parameter()
+                         .key('flight_status')
+                         .value(flight_status))
+            .query_param(Parameter()
+                         .key('date')
+                         .value(date))
             .header_param(Parameter()
                           .key('accept')
                           .value('application/json'))
-            .auth(Single('apiKey'))
+            .auth(Single('ApiKeyAuth'))
         ).response(
             ResponseHandler()
             .deserializer(APIHelper.json_deserialize)
-            .deserialize_into(M200OKHistorical.from_dictionary)
+            .deserialize_into(FlightResponse.from_dictionary)
+            .local_error('400', 'Bad request', ErrorResponseException)
+            .local_error('401', 'Unauthorized', ErrorResponseException)
+            .local_error('429', 'Rate limit exceeded', ErrorResponseException)
         ).execute()

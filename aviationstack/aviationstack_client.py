@@ -78,8 +78,7 @@ class AviationstackClient(object):
                  override_http_client_configuration=False, http_call_back=None,
                  timeout=60, max_retries=0, backoff_factor=2,
                  retry_statuses=None, retry_methods=None,
-                 environment=Environment.PRODUCTION,
-                 access_key='{{access_key}}',
+                 environment=Environment.PRODUCTION, access_key=None,
                  custom_query_authentication_credentials=None, config=None):
         self.config = config or Configuration(
             http_client_instance=http_client_instance,
@@ -95,8 +94,8 @@ class AviationstackClient(object):
             .base_uri_executor(self.config.get_base_uri)\
             .user_agent(BaseController.user_agent(), BaseController.user_agent_parameters())
 
-        self.auth_managers = {key: None for key in ['apiKey']}
-        self.auth_managers['apiKey'] = CustomQueryAuthentication(
+        self.auth_managers = {key: None for key in ['ApiKeyAuth']}
+        self.auth_managers['ApiKeyAuth'] = CustomQueryAuthentication(
             self.config.custom_query_authentication_credentials)
         self.global_configuration = self.global_configuration.auth_managers(self.auth_managers)
 

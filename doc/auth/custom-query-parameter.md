@@ -3,13 +3,13 @@
 
 
 
-Documentation for accessing and setting credentials for apiKey.
+Documentation for accessing and setting credentials for ApiKeyAuth.
 
 ## Auth Credentials
 
 | Name | Type | Description | Getter |
 |  --- | --- | --- | --- |
-| access_key | `str` | - | `access_key` |
+| access_key | `str` | Your AviationStack API access key | `access_key` |
 
 
 

@@ -15,7 +15,8 @@ from apimatic_core.response_handler import ResponseHandler
 from apimatic_core.types.parameter import Parameter
 from aviationstack.http.http_method_enum import HttpMethodEnum
 from apimatic_core.authentication.multiple.single_auth import Single
-from aviationstack.models.m_200_ok_airports import M200OKAirports
+from aviationstack.models.airport_response import AirportResponse
+from aviationstack.exceptions.error_response_exception import ErrorResponseException
 
 
 class AirportsController(BaseController):
@@ -24,11 +25,27 @@ class AirportsController(BaseController):
     def __init__(self, config):
         super(AirportsController, self).__init__(config)
 
-    def airports(self):
-        """Does a GET request to /airports.
+    def get_airports(self,
+                     limit=100,
+                     offset=0,
+                     iata_code=None,
+                     icao_code=None,
+                     country_code=None,
+                     city_name=None):
+        """Does a GET request to /v1/airports.
+
+        Retrieve airport data
+
+        Args:
+            limit (int, optional): Number of results to return
+            offset (int, optional): Number of results to skip
+            iata_code (str, optional): IATA code of the airport
+            icao_code (str, optional): ICAO code of the airport
+            country_code (str, optional): Country code
+            city_name (str, optional): City name
 
         Returns:
-            M200OKAirports: Response from the API.
+            AirportResponse: Response from the API. Successful response
 
         Raises:
             APIException: When an error occurs while fetching the data from
@@ -39,15 +56,35 @@ class AirportsController(BaseController):
         """
 
         return super().new_api_call_builder.request(
-            RequestBuilder().server(Server.SERVER_1)
-            .path('/airports')
+            RequestBuilder().server(Server.DEFAULT)
+            .path('/v1/airports')
             .http_method(HttpMethodEnum.GET)
+            .query_param(Parameter()
+                         .key('limit')
+                         .value(limit))
+            .query_param(Parameter()
+                         .key('offset')
+                         .value(offset))
+            .query_param(Parameter()
+                         .key('iata_code')
+                         .value(iata_code))
+            .query_param(Parameter()
+                         .key('icao_code')
+                         .value(icao_code))
+            .query_param(Parameter()
+                         .key('country_code')
+                         .value(country_code))
+            .query_param(Parameter()
+                         .key('city_name')
+                         .value(city_name))
             .header_param(Parameter()
                           .key('accept')
                           .value('application/json'))
-            .auth(Single('apiKey'))
+            .auth(Single('ApiKeyAuth'))
         ).response(
             ResponseHandler()
             .deserializer(APIHelper.json_deserialize)
-            .deserialize_into(M200OKAirports.from_dictionary)
+            .deserialize_into(AirportResponse.from_dictionary)
+            .local_error('400', 'Bad request', ErrorResponseException)
+            .local_error('401', 'Unauthorized', ErrorResponseException)
         ).execute()

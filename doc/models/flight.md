@@ -9,25 +9,39 @@
 
 | Name | Type | Tags | Description |
 |  --- | --- | --- | --- |
-| `number` | `str` | Required | - |
-| `iata` | `str` | Required | - |
-| `icao` | `str` | Required | - |
-| `codeshared` | [Codeshared](../../doc/models/codeshared.md) \| None \| [Codeshared1](../../doc/models/codeshared-1.md) | Required | This is a container for one-of cases. |
+| `flight_date` | `date` | Optional | Date of the flight |
+| `flight_status` | [`FlightStatusEnum`](../../doc/models/flight-status-enum.md) | Optional | Status of the flight |
+| `departure` | [`AirportInfo`](../../doc/models/airport-info.md) | Optional | - |
+| `arrival` | [`AirportInfo`](../../doc/models/airport-info.md) | Optional | - |
+| `airline` | [`AirlineInfo`](../../doc/models/airline-info.md) | Optional | - |
+| `flight` | [`FlightInfo`](../../doc/models/flight-info.md) | Optional | - |
+| `aircraft` | [`AircraftInfo`](../../doc/models/aircraft-info.md) | Optional | - |
+| `live` | [`LiveInfo`](../../doc/models/live-info.md) | Optional | - |
 
 ## Example (as JSON)
 
 ```json
 {
-  "number": "number8",
-  "iata": "iata2",
-  "icao": "icao2",
-  "codeshared": {
-    "airline_name": "t'way air",
-    "airline_iata": "tw",
-    "airline_icao": "twb",
-    "flight_number": "176",
-    "flight_iata": "tw176",
-    "flight_icao": "twb176"
+  "flight_date": "2016-03-13",
+  "flight_status": "scheduled",
+  "departure": {
+    "airport": "airport6",
+    "timezone": "timezone0",
+    "iata": "iata6",
+    "icao": "icao4",
+    "terminal": "terminal8"
+  },
+  "arrival": {
+    "airport": "airport2",
+    "timezone": "timezone6",
+    "iata": "iata0",
+    "icao": "icao0",
+    "terminal": "terminal4"
+  },
+  "airline": {
+    "name": "name2",
+    "iata": "iata4",
+    "icao": "icao4"
   }
 }
 ```

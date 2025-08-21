@@ -15,7 +15,8 @@ from apimatic_core.response_handler import ResponseHandler
 from apimatic_core.types.parameter import Parameter
 from aviationstack.http.http_method_enum import HttpMethodEnum
 from apimatic_core.authentication.multiple.single_auth import Single
-from aviationstack.models.m_200_ok_flight_future_schedules import M200OKFlightFutureSchedules
+from aviationstack.models.flight_schedule_response import FlightScheduleResponse
+from aviationstack.exceptions.error_response_exception import ErrorResponseException
 
 
 class FlightFutureSchedulesController(BaseController):
@@ -24,22 +25,29 @@ class FlightFutureSchedulesController(BaseController):
     def __init__(self, config):
         super(FlightFutureSchedulesController, self).__init__(config)
 
-    def flight_future_schedules(self,
-                                iata_code,
-                                mtype,
-                                date):
-        """Does a GET request to /flightsFuture.
+    def get_future_flight_schedules(self,
+                                    iata_code,
+                                    mtype,
+                                    date,
+                                    limit=100,
+                                    offset=0):
+        """Does a GET request to /v1/flights/{iata_code}/{type}/{date}.
+
+        Retrieve future flight schedule information for a specific airport and
+        date
 
         Args:
             iata_code (str): [Required] The IATA code of the airport you'd
                 like to request data from. Example: JFK,DXB.
-            mtype (str): [Required] Airport schedule type. Available values:
-                departure or arrival.
-            date (str): [Required] Filter your results by providing a flight
+            mtype (TypeEnum): [Required] Airport schedule type. Available
+                values: departure or arrival.
+            date (date): [Required] Filter your results by providing a flight
                 date in the format YYYY-MM-DD.
+            limit (int, optional): Number of results to return
+            offset (int, optional): Number of results to skip
 
         Returns:
-            M200OKFlightFutureSchedules: Response from the API.
+            FlightScheduleResponse: Response from the API. Successful response
 
         Raises:
             APIException: When an error occurs while fetching the data from
@@ -50,24 +58,35 @@ class FlightFutureSchedulesController(BaseController):
         """
 
         return super().new_api_call_builder.request(
-            RequestBuilder().server(Server.SERVER_1)
-            .path('/flightsFuture')
+            RequestBuilder().server(Server.DEFAULT)
+            .path('/v1/flights/{iata_code}/{type}/{date}')
             .http_method(HttpMethodEnum.GET)
+            .template_param(Parameter()
+                            .key('iata_code')
+                            .value(iata_code)
+                            .should_encode(True))
+            .template_param(Parameter()
+                            .key('type')
+                            .value(mtype)
+                            .should_encode(True))
+            .template_param(Parameter()
+                            .key('date')
+                            .value(date)
+                            .should_encode(True))
             .query_param(Parameter()
-                         .key('iataCode')
-                         .value(iata_code))
+                         .key('limit')
+                         .value(limit))
             .query_param(Parameter()
-                         .key('type')
-                         .value(mtype))
-            .query_param(Parameter()
-                         .key('date')
-                         .value(date))
+                         .key('offset')
+                         .value(offset))
             .header_param(Parameter()
                           .key('accept')
                           .value('application/json'))
-            .auth(Single('apiKey'))
+            .auth(Single('ApiKeyAuth'))
         ).response(
             ResponseHandler()
             .deserializer(APIHelper.json_deserialize)
-            .deserialize_into(M200OKFlightFutureSchedules.from_dictionary)
+            .deserialize_into(FlightScheduleResponse.from_dictionary)
+            .local_error('400', 'Bad request', ErrorResponseException)
+            .local_error('401', 'Unauthorized', ErrorResponseException)
         ).execute()

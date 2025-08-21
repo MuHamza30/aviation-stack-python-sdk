@@ -9,19 +9,19 @@
 
 | Name | Type | Tags | Description |
 |  --- | --- | --- | --- |
-| `limit` | `int` | Required | - |
-| `offset` | `int` | Required | - |
-| `count` | `int` | Required | - |
-| `total` | `int` | Required | - |
+| `limit` | `int` | Required | Number of results per page |
+| `offset` | `int` | Required | Number of results skipped |
+| `count` | `int` | Required | Total number of results |
+| `total` | `int` | Required | Total number of available results |
 
 ## Example (as JSON)
 
 ```json
 {
-  "limit": 100,
-  "offset": 0,
-  "count": 100,
-  "total": 16069978
+  "limit": 66,
+  "offset": 162,
+  "count": 210,
+  "total": 160
 }
 ```
 

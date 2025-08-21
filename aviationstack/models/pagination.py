@@ -13,10 +13,10 @@ class Pagination(object):
     """Implementation of the 'Pagination' model.
 
     Attributes:
-        limit (int): The model property of type int.
-        offset (int): The model property of type int.
-        count (int): The model property of type int.
-        total (int): The model property of type int.
+        limit (int): Number of results per page
+        offset (int): Number of results skipped
+        count (int): Total number of results
+        total (int): Total number of available results
 
     """
 

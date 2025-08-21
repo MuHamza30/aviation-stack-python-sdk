@@ -15,12 +15,13 @@ from apimatic_requests_client_adapter.requests_client import RequestsClient
 
 class Environment(Enum):
     """An enum for SDK environments"""
+    # Production server
     PRODUCTION = 0
 
 
 class Server(Enum):
     """An enum for API servers"""
-    SERVER_1 = 0
+    DEFAULT = 0
 
 
 class Configuration(HttpClientConfiguration):
@@ -43,8 +44,7 @@ class Configuration(HttpClientConfiguration):
                  override_http_client_configuration=False, http_call_back=None,
                  timeout=60, max_retries=0, backoff_factor=2,
                  retry_statuses=None, retry_methods=None,
-                 environment=Environment.PRODUCTION,
-                 access_key='{{access_key}}',
+                 environment=Environment.PRODUCTION, access_key=None,
                  custom_query_authentication_credentials=None):
         if retry_methods is None:
             retry_methods = ['GET', 'PUT']
@@ -107,11 +107,11 @@ class Configuration(HttpClientConfiguration):
     # All the environments the SDK can run in
     environments = {
         Environment.PRODUCTION: {
-            Server.SERVER_1: 'https://api.aviationstack.com/v1'
+            Server.DEFAULT: 'https://api.aviationstack.com/v1'
         }
     }
 
-    def get_base_uri(self, server=Server.SERVER_1):
+    def get_base_uri(self, server=Server.DEFAULT):
         """Generates the appropriate base URI for the environment and the
         server.
 
